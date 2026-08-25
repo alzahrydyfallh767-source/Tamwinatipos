@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تموينات الظاهري</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#222}
+header{background:#198754;color:white;padding:18px;text-align:center}
+header h1{margin:0;font-size:28px}
+header p{margin:7px 0 0}
+nav{display:flex;flex-wrap:wrap;gap:8px;padding:10px;background:white;position:sticky;top:0;z-index:5}
+nav button{flex:1;padding:12px;border:0;border-radius:8px;background:#198754;color:white;font-size:16px}
+.container{padding:15px;max-width:900px;margin:auto}
+.card{background:white;padding:18px;margin-bottom:15px;border-radius:12px;box-shadow:0 2px 8px #0001}
+h2{margin-top:0;color:#198754}
+input,select{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #ccc;border-radius:7px;font-size:16px}
+button{padding:11px 16px;border:0;border-radius:7px;cursor:pointer;font-size:15px}
+.primary{background:#198754;color:white}
+.danger{background:#dc3545;color:white}
+.secondary{background:#6c757d;color:white}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{padding:18px;background:#e9f7ef;border-radius:10px;text-align:center}
+.stat b{display:block;font-size:23px;color:#198754}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:9px;border-bottom:1px solid #ddd;text-align:center}
+th{background:#198754;color:white}
+.hidden{display:none}
+.total{font-size:20px;font-weight:bold;margin:12px 0}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>تموينات الظاهري</h1>
+<p>برنامج المبيعات والمشتريات والمخزون</p>
+</header>
+
+<nav>
+<button onclick="showPage('home')">الرئيسية</button>
+<button onclick="showPage('products')">المخزون</button>
+<button onclick="showPage('sales')">المبيعات</button>
+<button onclick="showPage('purchases')">المشتريات</button>
+</nav>
+
+<div class="container">
+
+<!-- الرئيسية -->
+<section id="home">
+<div class="card">
+<h2>مرحباً بك 👋</h2>
+<p>إدارة تموينات الظاهري بسهولة.</p>
+</div>
+
+<div class="stats">
+<div class="stat">المنتجات<b id="countProducts">0</b></div>
+<div class="stat">المبيعات<b id="salesTotal">0</b></div>
+<div class="stat">المشتريات<b id="purchaseTotal">0</b></div>
+<div class="stat">قيمة المخزون<b id="stockTotal">0</b></div>
+</div>
+</section>
+
+<!-- المخزون -->
+<section id="products" class="hidden">
+<div class="card">
+<h2>إضافة منتج</h2>
+
+<input id="pname" placeholder="اسم المنتج">
+<input id="pprice" type="number" placeholder="سعر البيع">
+<input id="pcost" type="number" placeholder="سعر الشراء">
+<input id="pqty" type="number" placeholder="الكمية">
+
+<button class="primary" onclick="addProduct()">إضافة المنتج</button>
+</div>
+
+<div class="card">
+<h2>المنتجات</h2>
+<table>
+<thead>
+<tr>
+<th>المنتج</th>
+<th>البيع</th>
+<th>الكمية</th>
+<th>حذف</th>
+</tr>
+</thead>
+<tbody id="productsTable"></tbody>
+</table>
+</div>
+</section>
+
+<!-- المبيعات -->
+<section id="sales" class="hidden">
+<div class="card">
+<h2>فاتورة بيع</h2>
+
+<select id="saleProduct"></select>
+<input id="saleQty" type="number" value="1" min="1" placeholder="الكمية">
+
+<button class="primary" onclick="makeSale()">تسجيل البيع</button>
+
+<div class="total">إجمالي المبيعات: <span id="salePageTotal">0</span></div>
+</div>
+
+<div class="card">
+<h2>آخر المبيعات</h2>
+<table>
+<thead>
+<tr>
+<th>المنتج</th>
+<th>الكمية</th>
+<th>الإجمالي</th>
+</tr>
+</thead>
+<tbody id="salesTable"></tbody>
+</table>
+</div>
+</section>
+
+<!-- المشتريات -->
+<section id="purchases" class="hidden">
+<div class="card">
+<h2>تسجيل شراء</h2>
+
+<select id="purchaseProduct"></select>
+<input id="purchaseQty" type="number" value="1" min="1" placeholder="الكمية">
+
+<button class="primary" onclick="makePurchase()">تسجيل الشراء</button>
+
+<div class="total">إجمالي المشتريات: <span id="purchasePageTotal">0</span></div>
+</div>
+
+<div class="card">
+<h2>آخر المشتريات</h2>
+<table>
+<thead>
+<tr>
+<th>المنتج</th>
+<th>الكمية</th>
+<th>الإجمالي</th>
+</tr>
+</thead>
+<tbody id="purchasesTable"></tbody>
+</table>
+</div>
+</section>
+
+</div>
+
+<script>
+let products=JSON.parse(localStorage.getItem("products")||"[]");
+let sales=JSON.parse(localStorage.getItem("sales")||"[]");
+let purchases=JSON.parse(localStorage.getItem("purchases")||"[]");
+
+function save(){
+localStorage.setItem("products",JSON.stringify(products));
+localStorage.setItem("sales",JSON.stringify(sales));
+localStorage.setItem("purchases",JSON.stringify(purchases));
+}
+
+function showPage(page){
+document.querySelectorAll("section").forEach(x=>x.classList.add("hidden"));
+document.getElementById(page).classList.remove("hidden");
+update();
+}
+
+function addProduct(){
+let name=document.getElementById("pname").value.trim();
+let price=Number(document.getElementById("pprice").value);
+let cost=Number(document.getElementById("pcost").value);
+let qty=Number(document.getElementById("pqty").value);
+
+if(!name||price<=0||qty<0){
+alert("أدخل بيانات المنتج بشكل صحيح");
+return;
+}
+
+products.push({
+id:Date.now(),
+name:name,
+price:price,
+cost:cost,
+qty:qty
+});
+
+save();
+
+document.getElementById("pname").value="";
+document.getElementById("pprice").value="";
+document.getElementById("pcost").value="";
+document.getElementById("pqty").value="";
+
+update();
+alert("تمت إضافة المنتج بنجاح");
+}
+
+function deleteProduct(id){
+if(confirm("هل تريد حذف المنتج؟")){
+products=products.filter(p=>p.id!==id);
+save();
+update();
+}
+}
+
+function makeSale(){
+let id=Number(document.getElementById("saleProduct").value);
+let qty=Number(document.getElementById("saleQty").value);
+
+let p=products.find(x=>x.id===id);
+
+if(!p||qty<=0){
+alert("اختر المنتج والكمية");
+return;
+}
+
+if(p.qty<qty){
+alert("الكمية الموجودة في المخزون غير كافية");
+return;
+}
+
+p.qty-=qty;
+
+sales.push({
+name:p.name,
+qty:qty,
+total:p.price*qty,
+date:new Date().toLocaleString("ar-YE")
+});
+
+save();
+update();
+
+alert("تم تسجيل البيع");
+}
+
+function makePurchase(){
+let id=Number(document.getElementById("purchaseProduct").value);
+let qty=Number(document.getElementById("purchaseQty").value);
+
+let p=products.find(x=>x.id===id);
+
+if(!p||qty<=0){
+alert("اختر المنتج والكمية");
+return;
+}
+
+p.qty+=qty;
+
+purchases.push({
+name:p.name,
+qty:qty,
+total:p.cost*qty,
+date:new Date().toLocaleString("ar-YE")
+});
+
+save();
+update();
+
+alert("تم تسجيل الشراء");
+}
+
+function update(){
+let pt=document.getElementById("productsTable");
+pt.innerHTML="";
+
+products.forEach(p=>{
+pt.innerHTML+=`
+<tr>
+<td>${p.name}</td>
+<td>${p.price}</td>
+<td>${p.qty}</td>
+<td><button class="danger" onclick="deleteProduct(${p.id})">حذف</button></td>
+</tr>`;
+});
+
+let saleSelect=document.getElementById("saleProduct");
+let purchaseSelect=document.getElementById("purchaseProduct");
+
+saleSelect.innerHTML="";
+purchaseSelect.innerHTML="";
+
+products.forEach(p=>{
+saleSelect.innerHTML+=`<option value="${p.id}">${p.name}</option>`;
+purchaseSelect.innerHTML+=`<option value="${p.id}">${p.name}</option>`;
+});
+
+let st=document.getElementById("salesTable");
+st.innerHTML="";
+
+sales.slice().reverse().forEach(s=>{
+st.innerHTML+=`
+<tr>
+<td>${s.name}</td>
+<td>${s.qty}</td>
+<td>${s.total}</td>
+</tr>`;
+});
+
+let pur=document.getElementById("purchasesTable");
+pur.innerHTML="";
+
+purchases.slice().reverse().forEach(p=>{
+pur.innerHTML+=`
+<tr>
+<td>${p.name}</td>
+<td>${p.qty}</td>
+<td>${p.total}</td>
+</tr>`;
+});
+
+let salesTotal=sales.reduce((a,b)=>a+b.total,0);
+let purchaseTotal=purchases.reduce((a,b)=>a+b.total,0);
+let stockTotal=products.reduce((a,b)=>a+(b.qty*b.cost),0);
+
+document.getElementById("countProducts").textContent=products.length;
+document.getElementById("salesTotal").textContent=salesTotal;
+document.getElementById("purchaseTotal").textContent=purchaseTotal;
+document.getElementById("stockTotal").textContent=stockTotal;
+document.getElementById("salePageTotal").textContent=salesTotal;
+document.getElementById("purchasePageTotal").textContent=purchaseTotal;
+}
+
+update();
+</script>
+
+</body>
+</html>
