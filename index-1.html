@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تموينات الظاهري - المبيعات والمشتريات والمخزون</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#222}
+header{background:#198754;color:#fff;padding:18px 14px;text-align:center}
+header h1{margin:0;font-size:26px}header p{margin:7px 0 0}
+nav{display:flex;gap:7px;flex-wrap:wrap;padding:10px;background:#fff;position:sticky;top:0;z-index:5}
+nav button{flex:1;min-width:110px;border:0;border-radius:10px;padding:12px;background:#e9ecef;font-size:16px}
+nav button.active{background:#198754;color:#fff}
+.container{max-width:950px;margin:auto;padding:12px}
+.card{background:#fff;border-radius:14px;padding:15px;margin-bottom:12px;box-shadow:0 1px 5px #0001}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+input,select{width:100%;padding:11px;border:1px solid #ccd2d8;border-radius:9px;font-size:15px}
+button{cursor:pointer}.primary{background:#198754;color:#fff;border:0;border-radius:9px;padding:11px 16px;font-size:15px}.danger{background:#dc3545;color:#fff;border:0;border-radius:9px;padding:8px 12px}.secondary{background:#6c757d;color:#fff;border:0;border-radius:9px;padding:9px 13px}
+h2{margin-top:0;color:#198754}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #eee;text-align:right}th{background:#f1f3f5}
+.total{font-size:22px;font-weight:bold;color:#198754}.hidden{display:none}.muted{color:#666;font-size:13px}
+.badge{display:inline-block;padding:5px 9px;border-radius:20px;background:#e8f5ee;color:#198754}
+</style>
+</head>
+<body>
+<header><h1>تموينات الظاهري</h1><p>برنامج المبيعات والمشتريات والمخزون</p></header>
+<nav>
+<button class="active" onclick="show('home',this)">الرئيسية</button>
+<button onclick="show('products',this)">المخزون</button>
+<button onclick="show('sales',this)">المبيعات</button>
+<button onclick="show('purchases',this)">المشتريات</button>
+<button onclick="show('reports',this)">التقارير</button>
+</nav>
+<div class="container">
+
+<section id="home" class="page">
+<div class="card"><h2>لوحة التحكم</h2>
+<div class="grid">
+<div><span class="badge">الأصناف</span><h2 id="countProducts">0</h2></div>
+<div><span class="badge">المخزون</span><h2 id="stockValue">0</h2></div>
+<div><span class="badge">المبيعات</span><h2 id="salesValue">0</h2></div>
+<div><span class="badge">المشتريات</span><h2 id="purchaseValue">0</h2></div>
+</div></div>
+<div class="card"><h2>طريقة الاستخدام</h2><p>1) أضف الأصناف وأسعار الشراء والبيع والكميات من المخزون.</p><p>2) سجّل المبيعات أو المشتريات، وسيتم تحديث المخزون تلقائياً.</p><p>3) البيانات تُحفظ على هذا الجهاز داخل المتصفح.</p></div>
+</section>
+
+<section id="products" class="page hidden">
+<div class="card"><h2>إضافة صنف</h2>
+<div class="grid">
+<input id="pname" placeholder="اسم الصنف">
+<input id="buy" type="number" min="0" placeholder="سعر الشراء">
+<input id="sell" type="number" min="0" placeholder="سعر البيع">
+<input id="qty" type="number" min="0" placeholder="الكمية">
+</div><br><button class="primary" onclick="addProduct()">إضافة الصنف</button>
+</div>
+<div class="card"><h2>الأصناف</h2><div style="overflow:auto"><table><thead><tr><th>الصنف</th><th>شراء</th><th>بيع</th><th>الكمية</th><th>إجراء</th></tr></thead><tbody id="productsTable"></tbody></table></div></div>
+</section>
+
+<section id="sales" class="page hidden">
+<div class="card"><h2>فاتورة مبيعات</h2>
+<div class="grid"><select id="saleProduct"></select><input id="saleQty" type="number" min="1" value="1" placeholder="الكمية"></div><br>
+<button class="primary" onclick="addSale()">تسجيل البيع</button>
+<p class="muted">يُخصم المخزون تلقائياً.</p></div>
+<div class="card"><h2>آخر المبيعات</h2><div style="overflow:auto"><table><thead><tr><th>التاريخ</th><th>الصنف</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody id="salesTable"></tbody></table></div></div>
+</section>
+
+<section id="purchases" class="page hidden">
+<div class="card"><h2>تسجيل مشتريات</h2>
+<div class="grid"><select id="purchaseProduct"></select><input id="purchaseQty" type="number" min="1" value="1" placeholder="الكمية"></div><br>
+<button class="primary" onclick="addPurchase()">تسجيل الشراء</button>
+<p class="muted">تُضاف الكمية للمخزون تلقائياً.</p></div>
+<div class="card"><h2>آخر المشتريات</h2><div style="overflow:auto"><table><thead><tr><th>التاريخ</th><th>الصنف</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody id="purchasesTable"></tbody></table></div></div>
+</section>
+
+<section id="reports" class="page hidden">
+<div class="card"><h2>التقارير</h2><div class="grid">
+<div><span class="muted">إجمالي المبيعات</span><div class="total" id="rSales">0</div></div>
+<div><span class="muted">إجمالي المشتريات</span><div class="total" id="rPurchases">0</div></div>
+<div><span class="muted">الربح التقريبي</span><div class="total" id="rProfit">0</div></div>
+</div><br><button class="danger" onclick="resetData()">مسح كل البيانات</button></div>
+</section>
+
+</div>
+<script>
+let data=JSON.parse(localStorage.getItem('tamwinati_data')||'null')||{products:[],sales:[],purchases:[]};
+const save=()=>{localStorage.setItem('tamwinati_data',JSON.stringify(data));render()};
+function money(n){return Number(n||0).toLocaleString('ar-YE')+' ريال'}
+function show(id,btn){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
+function addProduct(){
+ let name=document.getElementById('pname').value.trim(),buy=+document.getElementById('buy').value,sell=+document.getElementById('sell').value,qty=+document.getElementById('qty').value;
+ if(!name)return alert('اكتب اسم الصنف');data.products.push({id:Date.now(),name,buy,sell,qty});['pname','buy','sell','qty'].forEach(id=>document.getElementById(id).value='');save();
+}
+function addSale(){
+ let id=+document.getElementById('saleProduct').value,q=+document.getElementById('saleQty').value,p=data.products.find(x=>x.id===id);
+ if(!p)return alert('أضف صنفاً أولاً');if(q<1||q>p.qty)return alert('الكمية غير متوفرة');p.qty-=q;data.sales.unshift({date:new Date().toLocaleString('ar-YE'),name:p.name,qty:q,total:q*p.sell});save();
+}
+function addPurchase(){
+ let id=+document.getElementById('purchaseProduct').value,q=+document.getElementById('purchaseQty').value,p=data.products.find(x=>x.id===id);
+ if(!p)return alert('أضف صنفاً أولاً');if(q<1)return alert('أدخل كمية صحيحة');p.qty+=q;data.purchases.unshift({date:new Date().toLocaleString('ar-YE'),name:p.name,qty:q,total:q*p.buy});save();
+}
+function delProduct(id){if(confirm('حذف الصنف؟')){data.products=data.products.filter(x=>x.id!==id);save()}}
+function resetData(){if(confirm('سيتم حذف جميع الأصناف والمبيعات والمشتريات. هل أنت متأكد؟')){data={products:[],sales:[],purchases:[]};save()}}
+function render(){
+ document.getElementById('countProducts').textContent=data.products.length;
+ document.getElementById('stockValue').textContent=money(data.products.reduce((s,p)=>s+p.qty*p.buy,0));
+ let sv=data.sales.reduce((s,x)=>s+x.total,0),pv=data.purchases.reduce((s,x)=>s+x.total,0);
+ document.getElementById('salesValue').textContent=money(sv);document.getElementById('purchaseValue').textContent=money(pv);
+ document.getElementById('rSales').textContent=money(sv);document.getElementById('rPurchases').textContent=money(pv);
+ document.getElementById('rProfit').textContent=money(sv-pv);
+ document.getElementById('productsTable').innerHTML=data.products.map(p=>`<tr><td>${p.name}</td><td>${money(p.buy)}</td><td>${money(p.sell)}</td><td>${p.qty}</td><td><button class="danger" onclick="delProduct(${p.id})">حذف</button></td></tr>`).join('')||'<tr><td colspan="5">لا توجد أصناف</td></tr>';
+ let opts=data.products.map(p=>`<option value="${p.id}">${p.name} — ${p.qty}</option>`).join('');
+ document.getElementById('saleProduct').innerHTML=opts;document.getElementById('purchaseProduct').innerHTML=opts;
+ document.getElementById('salesTable').innerHTML=data.sales.slice(0,50).map(x=>`<tr><td>${x.date}</td><td>${x.name}</td><td>${x.qty}</td><td>${money(x.total)}</td></tr>`).join('')||'<tr><td colspan="4">لا توجد مبيعات</td></tr>';
+ document.getElementById('purchasesTable').innerHTML=data.purchases.slice(0,50).map(x=>`<tr><td>${x.date}</td><td>${x.name}</td><td>${x.qty}</td><td>${money(x.total)}</td></tr>`).join('')||'<tr><td colspan="4">لا توجد مشتريات</td></tr>';
+}
+render();
+</script>
+</body></html>
